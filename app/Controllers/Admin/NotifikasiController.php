@@ -5,6 +5,8 @@ namespace App\Controllers\Admin;
 use App\Libraries\WhatsAppCloudService;
 use App\Models\NotifikasiWhatsappModel;
 use App\Models\PelangganModel;
+use App\Models\TemplateWhatsappModel;
+
 class NotifikasiController extends BaseAdminController
 {
     public function index()
@@ -19,6 +21,7 @@ class NotifikasiController extends BaseAdminController
             'title'         => 'Kirim Notifikasi WhatsApp - Anabie Net',
             'pelanggan'     => model(PelangganModel::class)->getWithJatuhTempo($bulan, $tahun),
             'riwayat'       => model(NotifikasiWhatsappModel::class)->getRiwayat(30),
+            'templates'     => model(TemplateWhatsappModel::class)->getTemplateAktif(),
             'cloudEnabled'  => $waConfig->isCloudReady(),
             'cloudConfigured' => $waConfig->cloudEnabled,
         ]);
