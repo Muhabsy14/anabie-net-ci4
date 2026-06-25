@@ -1,3 +1,8 @@
+<?php
+$this->extend('layouts/admin');
+$this->section('content');
+?>
+
 <div class="space-y-6">
 <div class="flex flex-wrap justify-between items-start gap-4">
 <h2 class="text-2xl font-bold text-primary">Kirim Notifikasi Via WhatsApp</h2>
@@ -29,7 +34,24 @@
 <p id="info-jt-detail" class="mt-1 text-on-surface-variant"></p>
 <button type="button" id="btn-template-wa" class="mt-2 text-xs font-semibold text-secondary hover:underline">Isi template pesan tagihan</button>
 </div>
-<textarea name="pesan" id="textarea-pesan-wa" rows="6" class="w-full border border-outline-variant rounded-lg p-3 text-sm focus:ring-4 focus:ring-secondary/10 focus:border-secondary" placeholder="Contoh: Yth. Budi, tagihan WiFi Anabie Net bulan ini sebesar Rp 355.000 jatuh tempo 15 Mei 2026. Terima kasih." required></textarea>
+
+<!-- Dropdown Pilih Template -->
+<?php if (!empty($templates)): ?>
+<div class="space-y-2">
+<label for="select-template-wa" class="text-sm font-semibold text-on-surface-variant">Pilih Template Pesan (Opsional)</label>
+<select id="select-template-wa" class="w-full border border-outline-variant rounded-lg p-3 text-sm focus:ring-4 focus:ring-secondary/10 focus:border-secondary">
+<option value="">— Pilih template atau ketik pesan sendiri —</option>
+<?php foreach ($templates as $template): ?>
+<option value="<?= $template['id'] ?>" data-isi="<?= htmlspecialchars($template['isi_pesan'], ENT_QUOTES, 'UTF-8') ?>" data-kategori="<?= esc($template['kategori']) ?>">
+<?= esc($template['nama_template']) ?> (<?= esc($template['kategori']) ?>)
+</option>
+<?php endforeach; ?>
+</select>
+<p class="text-xs text-on-surface-variant">Pilih template untuk mengisi otomatis pesan. Anda masih bisa mengeditnya.</p>
+</div>
+<?php endif; ?>
+
+<textarea name="pesan" id="textarea-pesan-wa" rows="6" class="w-full border border-outline-variant rounded-lg p-3 text-sm focus:ring-4 focus:ring-secondary/10 focus:border-secondary" placeholder="Tulis pesan WhatsApp Anda di sini..." required></textarea>
 <label class="text-sm font-semibold text-on-surface-variant">Metode pengiriman</label>
 <select name="mode" class="w-full border border-outline-variant rounded-lg p-3 text-sm">
 <option value="auto">Otomatis (API dulu, cadangan wa.me)</option>
@@ -38,7 +60,7 @@
 <?php endif; ?>
 <option value="wame">Hanya buka WhatsApp (wa.me)</option>
 </select>
-<button type="submit" class="w-full bg-secondary text-on-secondary py-3 rounded-lg font-label-md font-semibold flex items-center justify-center gap-2 shadow-lg shadow-secondary/20 hover:bg-secondary-container transition-all">
+<button type="submit" class="w-full bg-secondary text-on-secondary py-3 rounded-lg font-label-md font-semibold flex items-center justify-center gap-2 shadow-lg shadow-secondary/20 hover:bg-secondary/90 transition-colors">
 <span class="material-symbols-outlined">send</span>
 <?= $cloudEnabled ? 'Kirim via Cloud API' : 'Buka WhatsApp & Kirim' ?>
 </button>
@@ -86,6 +108,7 @@ Aktifkan API di file <code>.env</code> (lihat README). Saat ini menggunakan taut
   const detail = document.getElementById('info-jt-detail');
   const pesan = document.getElementById('textarea-pesan-wa');
   const btnTpl = document.getElementById('btn-template-wa');
+  const selectTemplate = document.getElementById('select-template-wa');
 
   function refresh() {
     const data = window.pelangganJatuhTempo?.[sel.value];
@@ -101,11 +124,33 @@ Aktifkan API di file <code>.env</code> (lihat README). Saat ini menggunakan taut
     const data = window.pelangganJatuhTempo?.[sel.value];
     if (!data) return;
     const nominal = new Intl.NumberFormat('id-ID').format(data.harga || 0);
-  pesan.value = 'Yth. ' + data.nama + ', tagihan WiFi Anabie Net bulan ini sebesar Rp ' + nominal +
-      '. Mohon dibayar sebelum jatuh tempo ' + data.jatuh_tempo_label + '. Terima kasih — Anabie Net Warungasem.';
+    pesan.value = 'Yth. ' + data.nama + ', tagihan WiFi Anabie Net bulan ini sebesar Rp ' + nominal +
+        '. Mohon dibayar sebelum jatuh tempo ' + data.jatuh_tempo_label + '. Terima kasih — Anabie Net Warungasem.';
+  });
+
+  // Event listener untuk dropdown template
+  selectTemplate?.addEventListener('change', function () {
+    if (this.value === '') {
+      // Jika pilihan kosong, jangan ubah textarea
+      return;
+    }
+
+    const selectedOption = this.options[this.selectedIndex];
+    const isiPesan = selectedOption.getAttribute('data-isi');
+    const kategori = selectedOption.getAttribute('data-kategori');
+
+    if (isiPesan) {
+      pesan.value = isiPesan;
+      pesan.focus();
+    }
+
+    // Reset dropdown setelah dipilih (opsional, bisa dihapus jika ingin dropdown tetap menampilkan pilihan)
+    // this.value = '';
   });
 
   sel?.addEventListener('change', refresh);
   refresh();
 })();
 </script>
+
+<?php $this->endSection(); ?>
